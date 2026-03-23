@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CEC Circuit Sizing — Motor &amp; Load Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #f5f6f8;
+  --white:    #ffffff;
+  --surface:  #ffffff;
+  --s2:       #f0f1f4;
+  --border:   #e2e4ea;
+  --border2:  #c8cad4;
+  --text:     #141520;
+  --muted:    #6b7080;
+  --subtle:   #9499a8;
+  --accent:   #2563eb;
+  --accent-h: #1d4ed8;
+  --accent-l: #eff4ff;
+  --accent-l2:#dbeafe;
+  --green:    #16a34a;
+  --green-l:  #f0fdf4;
+  --amber:    #d97706;
+  --amber-l:  #fffbeb;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Inter', sans-serif;
+  --r:    10px;
+  --r-lg: 16px;
+  --shadow: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.05);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-weight: 400; min-height: 100vh; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+/* ── HEADER ── */
+header {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: var(--shadow);
+}
+.header-inner {
+  max-width: 860px; margin: 0 auto;
+  padding: 0 2rem; height: 58px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none;
+}
+.logo-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--accent); display: flex; align-items: center; justify-content: center;
+}
+.logo-icon svg { width: 16px; height: 16px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+.logo-text { font-size: 14px; font-weight: 600; color: var(--text); letter-spacing: -.01em; }
+.logo-text span { color: var(--accent); }
+.header-pill {
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  color: var(--accent); background: var(--accent-l);
+  border: 1px solid var(--accent-l2); border-radius: 20px;
+  padding: 4px 12px; letter-spacing: .02em;
+}
+
+/* ── HERO ── */
+.hero {
+  max-width: 860px; margin: 0 auto;
+  padding: 3rem 2rem 1.5rem;
+  animation: fadeup .4s ease both;
+}
+@keyframes fadeup { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+.section-label {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--accent);
+  background: var(--accent-l); border: 1px solid var(--accent-l2);
+  border-radius: 20px; padding: 4px 12px; margin-bottom: 1rem;
+}
+.section-label .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+h1 { font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight: 600; letter-spacing: -.02em; color: var(--text); margin-bottom: .5rem; }
+h1 em { font-style: normal; color: var(--accent); }
+.hero-sub { font-size: 15px; color: var(--muted); max-width: 520px; }
+
+/* ── CARDS ── */
+.card {
+  max-width: 860px; margin: 0 auto 1.5rem;
+  padding: 0; background: var(--white);
+  border: 1px solid var(--border); border-radius: var(--r-lg);
+  box-shadow: var(--shadow); overflow: hidden;
+  animation: fadeup .4s .05s ease both;
+}
+.card-head {
+  padding: 1.25rem 1.75rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+}
+.card-head-icon {
+  width: 34px; height: 34px; border-radius: 8px;
+  background: var(--accent-l); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.card-head-icon svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.card-head-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.card-head-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.card-body { padding: 1.75rem; }
+
+/* ── FORM GRID ── */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+.grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+@media (max-width:640px) { .grid3,.grid4 { grid-template-columns: 1fr 1fr; } }
+@media (max-width:400px) { .grid2,.grid3,.grid4 { grid-template-columns: 1fr; } }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label {
+  font-size: 11px; font-weight: 600; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--muted);
+}
+select, input[type=number] {
+  width: 100%; background: var(--white);
+  border: 1.5px solid var(--border); border-radius: var(--r);
+  color: var(--text); font-family: var(--sans); font-size: 14px; font-weight: 400;
+  padding: 9px 12px; transition: border-color .15s, box-shadow .15s;
+  box-shadow: var(--shadow);
+}
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7080' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; background-size: 12px;
+  padding-right: 34px; cursor: pointer;
+}
+select:hover, select:focus, input[type=number]:hover, input[type=number]:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-l); outline: none;
+}
+input[type=number]::-webkit-inner-spin-button { opacity: .4; }
+
+/* ── BUTTON ── */
+.btn {
+  width: 100%; padding: 11px 20px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: var(--r);
+  font-family: var(--sans); font-size: 14px; font-weight: 600;
+  letter-spacing: -.01em; cursor: pointer;
+  transition: background .15s, transform .1s, box-shadow .15s;
+  box-shadow: 0 2px 8px rgba(37,99,235,.25);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn:hover { background: var(--accent-h); box-shadow: 0 4px 12px rgba(37,99,235,.3); }
+.btn:active { transform: scale(.99); }
+.btn svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; }
+
+/* ── OUTPUT ── */
+.output { display: none; margin-top: 1.5rem; }
+.output.show { display: block; animation: fadeup .3s ease both; }
+
+/* result spec */
+.result-box {
+  border: 1.5px solid var(--border); border-radius: var(--r-lg);
+  overflow: hidden; margin-bottom: 1.25rem;
+  box-shadow: var(--shadow);
+}
+.result-row {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1rem 1.25rem; background: var(--white); flex-wrap: wrap;
+}
+.result-row + .result-row { border-top: 1px solid var(--border); }
+.result-icon {
+  width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.result-icon.blue { background: var(--accent-l); }
+.result-icon.green { background: var(--green-l); }
+.result-icon svg { width: 16px; height: 16px; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.result-icon.blue svg { stroke: var(--accent); }
+.result-icon.green svg { stroke: var(--green); }
+.result-content { flex: 1; min-width: 0; }
+.result-label { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+.result-value { font-family: var(--mono); font-size: 16px; font-weight: 500; color: var(--text); word-break: break-all; }
+.result-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* steps accordion */
+.steps-wrap {
+  border: 1.5px solid var(--border); border-radius: var(--r-lg);
+  overflow: hidden; margin-bottom: 1.25rem;
+}
+.steps-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .875rem 1.25rem; background: var(--s2);
+  cursor: pointer; user-select: none;
+}
+.steps-head-left { display: flex; align-items: center; gap: 8px; }
+.steps-head-label { font-size: 12px; font-weight: 600; color: var(--text); }
+.steps-badge { font-size: 11px; color: var(--muted); background: var(--white); border: 1px solid var(--border); border-radius: 20px; padding: 2px 9px; }
+.steps-chevron { width: 16px; height: 16px; stroke: var(--muted); fill: none; stroke-width: 2; stroke-linecap: round; transition: transform .2s; }
+.steps-wrap.open .steps-chevron { transform: rotate(180deg); }
+.steps-body { display: none; }
+.steps-wrap.open .steps-body { display: block; }
+
+.step {
+  display: grid; grid-template-columns: 28px 1fr auto auto;
+  align-items: baseline; gap: 10px;
+  padding: .75rem 1.25rem; border-top: 1px solid var(--border);
+  background: var(--white);
+}
+.step-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent-l); color: var(--accent);
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.step-key { font-size: 13px; color: var(--muted); }
+.step-val { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--text); text-align: right; }
+.step-tbl { font-size: 11px; color: var(--subtle); background: var(--s2); border-radius: 4px; padding: 2px 7px; white-space: nowrap; }
+
+.disclaimer {
+  font-size: 12px; color: var(--muted); line-height: 1.7;
+  background: var(--s2); border-radius: var(--r);
+  padding: 1rem 1.25rem; border-left: 3px solid var(--border2);
+}
+
+/* ── DIVIDER ── */
+.section-divider {
+  max-width: 860px; margin: 2.5rem auto;
+  display: flex; align-items: center; gap: 1rem; padding: 0 2rem;
+}
+.section-divider-line { flex: 1; height: 1px; background: var(--border); }
+.section-divider-label {
+  font-size: 11px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--subtle);
+  white-space: nowrap;
+}
+
+/* ── LOAD HERO ── */
+.load-hero { max-width: 860px; margin: 0 auto; padding: .5rem 2rem 1.5rem; }
+.load-hero h2 { font-size: clamp(1.3rem, 3vw, 1.8rem); font-weight: 600; letter-spacing: -.02em; color: var(--text); margin-bottom: .4rem; }
+.load-hero h2 em { font-style: normal; color: var(--accent); }
+.load-hero p { font-size: 14px; color: var(--muted); }
+
+/* ── FOOTER ── */
+footer {
+  max-width: 860px; margin: 3rem auto 2rem;
+  padding: 1.5rem 2rem 0;
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+  border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--subtle);
+}
+footer strong { color: var(--muted); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <a class="logo" href="#">
+      <div class="logo-icon">
+        <svg viewBox="0 0 16 16"><path d="M2 8h3l2-5 3 10 2-5h2"/></svg>
+      </div>
+      <span class="logo-text">CEC <span>Sizing</span></span>
+    </a>
+    <span class="header-pill">CEC C22.1 — Table D16</span>
+  </div>
+</header>
+
+<main style="padding:0 2rem;">
+
+<!-- MOTOR HERO -->
+<div class="hero" style="padding-left:0;padding-right:0;">
+  <div class="section-label"><span class="dot"></span>3-Phase Motor Circuit</div>
+  <h1>Motor circuit <em>sizing</em></h1>
+  <p class="hero-sub">Select HP, voltage, and starter type — get breaker, cable, and conduit per CEC tables.</p>
+</div>
+
+<!-- MOTOR CARD -->
+<div class="card">
+  <div class="card-head">
+    <div class="card-head-icon">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5"/><path d="M8 3V1M8 15v-2M3 8H1m14 0h-2M4.2 4.2l-1.4-1.4M13.2 13.2l-1.4-1.4M4.2 11.8l-1.4 1.4M13.2 2.8l-1.4 1.4"/></svg>
+    </div>
+    <div>
+      <div class="card-head-title">Motor sizing — Table 44 / Table D16</div>
+      <div class="card-head-sub">Squirrel-cage induction motor, 3-phase AC</div>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="grid3">
+      <div class="field">
+        <label>Motor HP</label>
+        <select id="hp">
+          <option value="0.5">1/2 HP</option><option value="0.75">3/4 HP</option>
+          <option value="1">1 HP</option><option value="1.5">1-1/2 HP</option>
+          <option value="2">2 HP</option><option value="3">3 HP</option>
+          <option value="5">5 HP</option><option value="7.5">7-1/2 HP</option>
+          <option value="10">10 HP</option><option value="15" selected>15 HP</option>
+          <option value="20">20 HP</option><option value="25">25 HP</option>
+          <option value="30">30 HP</option><option value="40">40 HP</option>
+          <option value="50">50 HP</option><option value="60">60 HP</option>
+          <option value="75">75 HP</option><option value="100">100 HP</option>
+          <option value="125">125 HP</option><option value="150">150 HP</option>
+          <option value="200">200 HP</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>System voltage (3-ph)</label>
+        <select id="volt">
+          <option value="200">200 V</option><option value="208">208 V</option>
+          <option value="230">230 V</option><option value="460">460 V</option>
+          <option value="575" selected>575 V</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Starter type</label>
+        <select id="starter">
+          <option value="vfd" selected>VFD / Soft-Start (SS)</option>
+          <option value="fvnr">FVNR — Full voltage</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="calc()">
+      <svg viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+      Calculate motor circuit
+    </button>
+
+    <div class="output" id="out">
+      <div class="result-box">
+        <div class="result-row">
+          <div class="result-icon blue">
+            <svg viewBox="0 0 16 16"><path d="M8 2v4l2.5 2.5"/><circle cx="8" cy="8" r="6"/></svg>
+          </div>
+          <div class="result-content">
+            <div class="result-label">Breaker size</div>
+            <div class="result-value" id="o-breaker">—</div>
+            <div class="result-sub" id="o-breaker-note"></div>
+          </div>
+        </div>
+        <div class="result-row">
+          <div class="result-icon green">
+            <svg viewBox="0 0 16 16"><path d="M2 14l3-3 2 2 5-7"/><path d="M14 4l-5 7"/></svg>
+          </div>
+          <div class="result-content">
+            <div class="result-label">Cable &amp; conduit</div>
+            <div class="result-value" id="o-cable">—</div>
+            <div class="result-sub" id="o-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="steps-wrap" id="m-steps-wrap">
+        <div class="steps-head" onclick="toggleSteps('m-steps-wrap')">
+          <div class="steps-head-left">
+            <svg viewBox="0 0 16 16" style="width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;"><path d="M2 4h12M2 8h8M2 12h10"/></svg>
+            <span class="steps-head-label">Step-by-step breakdown</span>
+            <span class="steps-badge">6 steps · CEC tables</span>
+          </div>
+          <svg class="steps-chevron" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4"/></svg>
+        </div>
+        <div class="steps-body">
+          <div class="step"><span class="step-num">1</span><span class="step-key">Full-load current (FLC)</span><span class="step-val" id="s1">—</span><span class="step-tbl">Table 44</span></div>
+          <div class="step"><span class="step-num">2</span><span class="step-key">Circuit breaker size</span><span class="step-val" id="s2">—</span><span class="step-tbl">Table D16</span></div>
+          <div class="step"><span class="step-num">3</span><span class="step-key">Conductor — 75°C, next ≥ breaker</span><span class="step-val" id="s3">—</span><span class="step-tbl">Table 2</span></div>
+          <div class="step"><span class="step-num">4</span><span class="step-key">Ground wire — copper</span><span class="step-val" id="s4">—</span><span class="step-tbl">Table 16</span></div>
+          <div class="step"><span class="step-num">5</span><span class="step-key">Fill area (4C + 20% mixed)</span><span class="step-val" id="s5">—</span><span class="step-tbl">Table 6A</span></div>
+          <div class="step"><span class="step-num">6</span><span class="step-key">Conduit — rigid PVC 40% fill</span><span class="step-val" id="s6">—</span><span class="step-tbl">Table 9G</span></div>
+        </div>
+      </div>
+      <p class="disclaimer" id="disc"></p>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- DIVIDER -->
+<div class="section-divider" style="padding-left:0;padding-right:0;max-width:860px;margin-left:auto;margin-right:auto;padding:0 2rem;margin-top:2.5rem;margin-bottom:0;">
+  <div class="section-divider-line"></div>
+  <span class="section-divider-label">General load sizing</span>
+  <div class="section-divider-line"></div>
+</div>
+
+<!-- LOAD HERO -->
+<div class="load-hero" style="padding-left:2rem;padding-right:2rem;padding-top:2rem;">
+  <div class="section-label" style="margin-bottom:.75rem;"><span class="dot"></span>General Load</div>
+  <h2>Load <em>sizing</em></h2>
+  <p>Enter load in kW — get breaker, cable, and conduit per CEC Rule 14-104.</p>
+</div>
+
+<!-- LOAD CARD -->
+<div class="card" style="margin-left:2rem;margin-right:2rem;max-width:860px;margin-left:auto;margin-right:auto;">
+  <div class="card-head">
+    <div class="card-head-icon">
+      <svg viewBox="0 0 16 16"><path d="M2 12l4-8 3 5 2-3 3 6"/></svg>
+    </div>
+    <div>
+      <div class="card-head-title">Load sizing — Rule 14-104</div>
+      <div class="card-head-sub">Single or three-phase general load circuit</div>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="grid4">
+      <div class="field">
+        <label>Load (kW)</label>
+        <input type="number" id="l-kw" min="0.1" step="0.1" value="10" placeholder="e.g. 10.0">
+      </div>
+      <div class="field">
+        <label>Voltage</label>
+        <select id="l-volt">
+          <option value="120_1">120 V — 1-phase</option>
+          <option value="208_3">208 V — 3-phase</option>
+          <option value="600_3" selected>600 V — 3-phase</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>No. of conductors</label>
+        <select id="l-wires">
+          <option value="2">2-wire</option>
+          <option value="3" selected>3-wire</option>
+          <option value="4">4-wire</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Power factor</label>
+        <select id="l-pf">
+          <option value="1.00">1.00 — resistive</option>
+          <option value="0.95">0.95</option>
+          <option value="0.90" selected>0.90 — inductive</option>
+          <option value="0.85">0.85</option>
+          <option value="0.80">0.80</option>
+          <option value="0.75">0.75</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="calcLoad()">
+      <svg viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+      Calculate load circuit
+    </button>
+
+    <div class="output" id="l-out">
+      <div class="result-box">
+        <div class="result-row">
+          <div class="result-icon blue">
+            <svg viewBox="0 0 16 16"><path d="M8 2v4l2.5 2.5"/><circle cx="8" cy="8" r="6"/></svg>
+          </div>
+          <div class="result-content">
+            <div class="result-label">Breaker size</div>
+            <div class="result-value" id="l-o-breaker">—</div>
+            <div class="result-sub" id="l-o-breaker-note"></div>
+          </div>
+        </div>
+        <div class="result-row">
+          <div class="result-icon green">
+            <svg viewBox="0 0 16 16"><path d="M2 14l3-3 2 2 5-7"/><path d="M14 4l-5 7"/></svg>
+          </div>
+          <div class="result-content">
+            <div class="result-label">Cable &amp; conduit</div>
+            <div class="result-value" id="l-o-cable">—</div>
+            <div class="result-sub" id="l-o-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="steps-wrap" id="l-steps-wrap">
+        <div class="steps-head" onclick="toggleSteps('l-steps-wrap')">
+          <div class="steps-head-left">
+            <svg viewBox="0 0 16 16" style="width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;"><path d="M2 4h12M2 8h8M2 12h10"/></svg>
+            <span class="steps-head-label">Step-by-step breakdown</span>
+            <span class="steps-badge">6 steps · CEC tables</span>
+          </div>
+          <svg class="steps-chevron" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4"/></svg>
+        </div>
+        <div class="steps-body">
+          <div class="step"><span class="step-num">1</span><span class="step-key">Full-load current (calculated)</span><span class="step-val" id="l-s1">—</span><span class="step-tbl">I=kW/V·PF</span></div>
+          <div class="step"><span class="step-num">2</span><span class="step-key">Breaker — next std size ≥ FLC</span><span class="step-val" id="l-s2">—</span><span class="step-tbl">Rule 14-104</span></div>
+          <div class="step"><span class="step-num">3</span><span class="step-key">Conductor — 75°C, next ≥ FLC</span><span class="step-val" id="l-s3">—</span><span class="step-tbl">Table 2</span></div>
+          <div class="step"><span class="step-num">4</span><span class="step-key">Ground wire — copper</span><span class="step-val" id="l-s4">—</span><span class="step-tbl">Table 16</span></div>
+          <div class="step"><span class="step-num">5</span><span class="step-key">Fill area + 20% if mixed sizes</span><span class="step-val" id="l-s5">—</span><span class="step-tbl">Table 6A</span></div>
+          <div class="step"><span class="step-num">6</span><span class="step-key">Conduit — rigid PVC 40% fill</span><span class="step-val" id="l-s6">—</span><span class="step-tbl">Table 9G</span></div>
+        </div>
+      </div>
+      <p class="disclaimer" id="l-disc"></p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <strong>CEC Circuit Sizing Tool</strong>
+  <span>CEC C22.1 — Table 44 / D16 / 2 / 16 / 6A / 9G — Reference only, verify with AHJ</span>
+  <span>Built by <strong>Yash Sonar</strong></span>
+</footer>
+
+<script>
+/* ── accordion toggle ── */
+function toggleSteps(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+/* ── TABLE 44 ── */
+const T44 = {
+  0.5:{200:2.5,208:2.4,230:2.2,460:1.0,575:0.9},
+  0.75:{200:3.7,208:3.5,230:3.2,460:1.4,575:1.3},
+  1:{200:4.8,208:4.6,230:4.2,460:1.8,575:1.7},
+  1.5:{200:6.9,208:6.6,230:6.0,460:2.6,575:2.4},
+  2:{200:7.8,208:7.5,230:6.8,460:3.4,575:2.7},
+  3:{200:11.0,208:10.6,230:9.6,460:4.8,575:3.9},
+  5:{200:17.5,208:16.7,230:15.2,460:7.6,575:6.1},
+  7.5:{200:25.3,208:24.2,230:22,460:11,575:9},
+  10:{200:32.2,208:30.8,230:28,460:14,575:11},
+  15:{200:48.3,208:46.2,230:42,460:21,575:17},
+  20:{200:62.1,208:59.4,230:54,460:27,575:22},
+  25:{200:78.2,208:74.8,230:68,460:34,575:27},
+  30:{200:92,208:88,230:80,460:40,575:32},
+  40:{200:120,208:114,230:104,460:52,575:41},
+  50:{200:150,208:143,230:130,460:65,575:52},
+  60:{200:177,208:169,230:154,460:77,575:62},
+  75:{200:221,208:211,230:192,460:96,575:77},
+  100:{200:285,208:273,230:248,460:124,575:99},
+  125:{200:359,208:343,230:312,460:156,575:125},
+  150:{200:414,208:396,230:360,460:180,575:144},
+  200:{200:552,208:528,230:480,460:240,575:192},
+};
+
+/* ── TABLE D16 — both CB columns ── */
+const T_D16 = [
+  {flc:9,   fvnr:15, vfd:15},
+  {flc:14,  fvnr:15, vfd:20},
+  {flc:19,  fvnr:25, vfd:30},
+  {flc:25,  fvnr:30, vfd:40},
+  {flc:29,  fvnr:40, vfd:50},
+  {flc:35,  fvnr:50, vfd:60},
+  {flc:45,  fvnr:60, vfd:70,  ext:true},
+  {flc:55,  fvnr:70, vfd:90,  ext:true},
+  {flc:65,  fvnr:80, vfd:100, ext:true},
+  {flc:80,  fvnr:100,vfd:125, ext:true},
+  {flc:100, fvnr:125,vfd:150, ext:true},
+  {flc:120, fvnr:150,vfd:175, ext:true},
+  {flc:140, fvnr:175,vfd:200, ext:true},
+  {flc:160, fvnr:200,vfd:225, ext:true},
+  {flc:200, fvnr:250,vfd:300, ext:true},
+  {flc:250, fvnr:300,vfd:400, ext:true},
+  {flc:320, fvnr:400,vfd:500, ext:true},
+  {flc:400, fvnr:500,vfd:600, ext:true},
+  {flc:9999,fvnr:600,vfd:800, ext:true},
+];
+function getD16(flc, starter) {
+  const row = T_D16.find(r => r.flc >= Math.ceil(flc*10)/10) || T_D16[T_D16.length-1];
+  return { size: starter==='fvnr' ? row.fvnr : row.vfd, ext: !!row.ext };
+}
+
+/* ── TABLE 2 @ 75°C ── */
+const T2_75 = [
+  {awg:'14 AWG',amp:20, area:8.87},  {awg:'12 AWG',amp:25, area:11.58},
+  {awg:'10 AWG',amp:35, area:15.69}, {awg:'8 AWG', amp:50, area:28.18},
+  {awg:'6 AWG', amp:65, area:37.94}, {awg:'4 AWG', amp:85, area:52.42},
+  {awg:'3 AWG', amp:100,area:61.93}, {awg:'2 AWG', amp:115,area:73.9},
+  {awg:'1 AWG', amp:130,area:99.05}, {awg:'1/0 AWG',amp:150,area:118.24},
+  {awg:'2/0 AWG',amp:175,area:141.87},{awg:'3/0 AWG',amp:200,area:170.64},
+  {awg:'4/0 AWG',amp:230,area:206.37},{awg:'250 kcmil',amp:255,area:251.65},
+  {awg:'300 kcmil',amp:285,area:292.55},{awg:'350 kcmil',amp:310,area:331.03},
+  {awg:'400 kcmil',amp:335,area:372.91},{awg:'500 kcmil',amp:380,area:450.51},
+  {awg:'600 kcmil',amp:420,area:561.58},{awg:'750 kcmil',amp:475,area:679.33},
+];
+
+/* ── TABLE 16 copper ── */
+const T16 = [
+  {maxOCD:20,  awg:'14 AWG',area:8.87},  {maxOCD:30,  awg:'12 AWG',area:11.58},
+  {maxOCD:60,  awg:'10 AWG',area:15.69}, {maxOCD:100, awg:'8 AWG', area:28.18},
+  {maxOCD:200, awg:'6 AWG', area:37.94}, {maxOCD:300, awg:'4 AWG', area:52.42},
+  {maxOCD:400, awg:'3 AWG', area:61.93}, {maxOCD:500, awg:'2 AWG', area:73.9},
+  {maxOCD:600, awg:'1 AWG', area:99.05}, {maxOCD:800, awg:'1/0 AWG',area:118.24},
+  {maxOCD:1000,awg:'2/0 AWG',area:141.87},{maxOCD:1200,awg:'3/0 AWG',area:170.64},
+  {maxOCD:1600,awg:'4/0 AWG',area:206.37},{maxOCD:2000,awg:'250 kcmil',area:251.65},
+];
+function getGround(b) { return T16.find(g=>g.maxOCD>=b)||T16[T16.length-1]; }
+
+/* ── TABLE 9G rigid PVC 40% ── */
+const T9G = [
+  {trade:'16mm',mm:16,area40:66.68},  {trade:'21mm',mm:21,area40:122.79},
+  {trade:'27mm',mm:27,area40:202.68}, {trade:'35mm',mm:35,area40:316.69},
+  {trade:'41mm',mm:41,area40:456.04}, {trade:'53mm',mm:53,area40:810.73},
+  {trade:'63mm',mm:63,area40:1180.51},{trade:'78mm',mm:78,area40:1824.15},
+  {trade:'91mm',mm:91,area40:2455.02},{trade:'103mm',mm:103,area40:3147.88},
+];
+
+/* ── STD breakers ── */
+const STD_CB = [15,20,25,30,35,40,45,50,60,70,80,90,100,110,125,150,175,200,225,250,300,350,400,450,500,600,700,800,1000,1200];
+function nextStdCB(a) { return STD_CB.find(b=>b>=Math.ceil(a))||STD_CB[STD_CB.length-1]; }
+
+/* ── helpers ── */
+function fmt(awg) { return awg.includes('kcmil') ? awg : '#'+awg.replace(' AWG',''); }
+function set(id,v) { document.getElementById(id).textContent = v; }
+
+function pickCond(minAmp) {
+  const MIN = T2_75.findIndex(c=>c.awg==='12 AWG');
+  const idx  = T2_75.findIndex(c=>c.amp>=minAmp);
+  return { cond: T2_75[Math.max(idx<0?T2_75.length-1:idx, MIN)], minApplied: Math.max(idx<0?T2_75.length-1:idx, MIN) > (idx<0?T2_75.length-1:idx) };
+}
+function pickConduit(fill) {
+  const MIN = T9G.findIndex(c=>c.mm>=19);
+  const idx  = T9G.findIndex(c=>c.area40>=fill);
+  return { conduit: T9G[Math.max(idx<0?T9G.length-1:idx, MIN)], minApplied: Math.max(idx<0?T9G.length-1:idx, MIN) > (idx<0?T9G.length-1:idx) };
+}
+function fillCalc(cond, gnd, count) {
+  const raw = cond.area*count + gnd.area;
+  const same = cond.awg===gnd.awg;
+  return { raw, total: same ? raw : raw*1.20, same };
+}
+
+/* ── MOTOR CALC ── */
+function calc() {
+  const hp      = parseFloat(document.getElementById('hp').value);
+  const volt    = parseInt(document.getElementById('volt').value);
+  const starter = document.getElementById('starter').value;
+  const flc     = T44[hp]&&T44[hp][volt];
+  if (!flc) { alert('No Table 44 entry for that combination.'); return; }
+
+  const d16      = getD16(flc, starter);
+  const breaker  = d16.size;
+  const slbl     = starter==='fvnr' ? 'CB — FVNR (full-voltage)' : 'CB — VFD / Soft-Start';
+
+  const {cond, minApplied:cMin} = pickCond(breaker);
+  const gnd = getGround(breaker);
+  const {raw, total, same} = fillCalc(cond, gnd, 3);
+  const {conduit, minApplied:condMin} = pickConduit(total);
+  const fillPct = ((total/conduit.area40)*100).toFixed(1);
+
+  const cable = '3C '+fmt(cond.awg)+' AWG + '+fmt(gnd.awg)+' GND  in  '+conduit.trade+' Rigid PVC';
+
+  set('o-breaker', breaker+' A');
+  set('o-breaker-note', slbl+' — Table D16'+(d16.ext?' *':''));
+  set('o-cable', cable);
+  set('o-fill', total.toFixed(1)+' mm² / '+conduit.area40+' mm² allowed ('+fillPct+'% fill)');
+
+  set('s1', flc.toFixed(1)+' A');
+  set('s2', breaker+' A  ('+slbl+')'+(d16.ext?' *':''));
+  set('s3', cond.amp+' A → '+cond.awg+(cMin?' ← min #12':''));
+  set('s4', gnd.awg+'  (OCD ≤ '+gnd.maxOCD+' A)');
+  set('s5', '3×'+cond.area+' + '+gnd.area+' = '+raw.toFixed(1)+(same?'':' ×1.20')+' = '+total.toFixed(1)+' mm²');
+  set('s6', conduit.trade+'  ('+conduit.area40+' mm² ≥ '+total.toFixed(1)+' mm²)'+(condMin?' ← min 19mm':''));
+
+  set('disc', (d16.ext ? '* Extended from Table D16 pattern — verify with full table. ' : '')+'All values per CEC C22.1. Minimum conductor #12 AWG, minimum conduit 19mm. Always verify with AHJ.');
+  document.getElementById('out').classList.add('show');
+  document.getElementById('m-steps-wrap').classList.add('open');
+}
+
+/* ── LOAD CALC ── */
+function calcLoad() {
+  const kw    = parseFloat(document.getElementById('l-kw').value);
+  const vkey  = document.getElementById('l-volt').value;
+  const wires = parseInt(document.getElementById('l-wires').value);
+  const pf    = parseFloat(document.getElementById('l-pf').value);
+  if (!kw||kw<=0) { alert('Enter a valid kW value.'); return; }
+
+  const [vStr,phStr] = vkey.split('_');
+  const voltage = parseInt(vStr);
+  const is3ph   = phStr==='3';
+  const flc     = is3ph ? (kw*1000)/(Math.sqrt(3)*voltage*pf) : (kw*1000)/(voltage*pf);
+  const formula = is3ph ? 'I='+kw+'k/(√3×'+voltage+'×'+pf+')' : 'I='+kw+'k/('+voltage+'×'+pf+')';
+  const breaker = nextStdCB(flc);
+
+  const {cond, minApplied:cMin} = pickCond(flc);
+  const gnd = getGround(breaker);
+  const {raw, total, same} = fillCalc(cond, gnd, wires);
+  const {conduit, minApplied:condMin} = pickConduit(total);
+  const fillPct = ((total/conduit.area40)*100).toFixed(1);
+  const phLabel = is3ph?'3-phase':'1-phase';
+
+  const cable = wires+'C '+fmt(cond.awg)+' AWG + '+fmt(gnd.awg)+' GND  in  '+conduit.trade+' Rigid PVC';
+
+  set('l-o-breaker', breaker+' A');
+  set('l-o-breaker-note', voltage+' V '+phLabel+' — next std CB ≥ FLC');
+  set('l-o-cable', cable);
+  set('l-o-fill', total.toFixed(1)+' mm² / '+conduit.area40+' mm² allowed ('+fillPct+'% fill)');
+
+  set('l-s1', flc.toFixed(2)+' A  ('+formula+')');
+  set('l-s2', '≥ '+flc.toFixed(2)+' A → next std: '+breaker+' A');
+  set('l-s3', cond.amp+' A → '+cond.awg+(cMin?' ← min #12':''));
+  set('l-s4', gnd.awg+'  (OCD ≤ '+gnd.maxOCD+' A)');
+  set('l-s5', wires+'×'+cond.area+' + '+gnd.area+' = '+raw.toFixed(1)+(same?'':' ×1.20')+' = '+total.toFixed(1)+' mm²');
+  set('l-s6', conduit.trade+'  ('+conduit.area40+' mm² ≥ '+total.toFixed(1)+' mm²)'+(condMin?' ← min 19mm':''));
+
+  set('l-disc','Load current per CEC Rule 14-104. Conductor from Table 2 @75°C. Breaker = next standard size ≥ FLC. Ground per Table 16 copper. Conduit fill per Table 6A + Table 9G at 40% (rigid PVC). Minimum conductor #12 AWG, minimum conduit 19mm. Always verify with AHJ.');
+  document.getElementById('l-out').classList.add('show');
+  document.getElementById('l-steps-wrap').classList.add('open');
+}
+</script>
+</body>
+</html>
